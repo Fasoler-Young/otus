@@ -3,9 +3,7 @@ package unit;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import unit.annotation.After;
 import unit.annotation.Before;
 import unit.annotation.Test;
@@ -40,28 +38,25 @@ public class MyUnitFramework {
 
         int success = 0;
         int fail = 0;
-        // Запуск каждого теста требует успешного выполнения методов before,
-        // однако не требует выполнения метод after
-        // (хотя при возникновении ошибки в методе after, тест считается не пройденным),
-        // поэтому при любой ошибке переходим к следующему тесту
+        // Запуск каждого теста требует успешного выполнения методов before.
+        // Методы after выполняются в любом случае.
+        // Тест считается успешным если нет ошибок ни на каком этапе.
         for (Method test : tests) {
             System.out.println("---------------------------");
             Object obj = clazz.getConstructor().newInstance();
-            try {
-                runMethods(obj, before);
-                runMethod(obj, test);
-                runMethods(obj, after);
+
+            boolean hasErrorBefore = runMethods(obj, before);
+            boolean hasError = false;
+            if (!hasErrorBefore) {
+                hasError = runMethod(obj, test);
+            }
+            boolean hasErrorAfter = runMethods(obj, after);
+            if (!hasErrorBefore && !hasError && !hasErrorAfter) {
                 System.out.println("success: " + test.getName());
                 success++;
-            } catch (InvocationTargetException e) {
-                Throwable targetException = e.getTargetException();
-                System.out.println("fail: " + targetException.getMessage());
-                System.out.println(Arrays.toString(targetException.getStackTrace()));
+            } else {
                 fail++;
-            } catch (Exception e) {
                 System.out.println("fail: " + test.getName());
-                System.out.println(e);
-                fail++;
             }
         }
         System.out.println("---------------------------");
@@ -69,15 +64,30 @@ public class MyUnitFramework {
         System.out.println("fail: " + fail);
     }
 
-    private static void runMethods(Object o, List<Method> methods)
-            throws InvocationTargetException, IllegalAccessException {
+    private static boolean runMethods(Object o, List<Method> methods) {
+        boolean hasError = false;
         for (Method method : methods) {
-            runMethod(o, method);
+            boolean result = runMethod(o, method);
+            if (!hasError && result) {
+                hasError = true;
+            }
         }
+        return hasError;
     }
 
-    private static void runMethod(Object o, Method method) throws InvocationTargetException, IllegalAccessException {
-        method.setAccessible(true);
-        method.invoke(o);
+    private static boolean runMethod(Object o, Method method) {
+        try {
+            method.setAccessible(true);
+            method.invoke(o);
+            return false;
+        } catch (InvocationTargetException e) {
+            Throwable targetException = e.getTargetException();
+            System.out.println("error: " + targetException.getMessage());
+            System.out.println(Arrays.toString(targetException.getStackTrace()));
+        } catch (Exception e) {
+            System.out.println("error: " + method.getName());
+            System.out.println(e);
+        }
+        return true;
     }
 }
