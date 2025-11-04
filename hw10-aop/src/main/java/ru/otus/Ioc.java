@@ -5,6 +5,10 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 class Ioc {
 
@@ -26,25 +30,33 @@ class Ioc {
 
     static class DemoInvocationHandler<T> implements InvocationHandler {
         private final T myClass;
+        private final Set<MethodMeta> needLogging;
+
+        record MethodMeta(String name, List<Class<?>> parameterTypes) {}
 
         DemoInvocationHandler(T myClass) {
             this.myClass = myClass;
+            needLogging = new HashSet<>();
+            for (Method method : myClass.getClass().getMethods()) {
+                for (Annotation annotation : method.getAnnotations()) {
+                    if (annotation instanceof Log) {
+                        needLogging.add(new MethodMeta(method.getName(), Arrays.asList(method.getParameterTypes())));
+                        break;
+                    }
+                }
+            }
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            Annotation[] annotations = myClass.getClass()
-                    .getDeclaredMethod(method.getName(), method.getParameterTypes())
-                    .getAnnotations();
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof Log) {
-                    System.out.print("method: " + method.getName() + ", param: ");
-                    for (Object arg : args) {
-                        System.out.print(arg);
-                        System.out.print(" ");
-                    }
-                    System.out.println();
+
+            if (needLogging.contains(new MethodMeta(method.getName(), Arrays.asList(method.getParameterTypes())))) {
+                System.out.print("method: " + method.getName() + ", param: ");
+                for (Object arg : args) {
+                    System.out.print(arg);
+                    System.out.print(" ");
                 }
+                System.out.println();
             }
             return method.invoke(myClass, args);
         }
