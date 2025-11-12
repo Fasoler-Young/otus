@@ -26,4 +26,4 @@ pluginManagement {
     }
 }
 include("hw08-gc")
-include("hw08-gc")
+include("hw10-aop")
