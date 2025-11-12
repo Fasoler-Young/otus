@@ -1,14 +1,13 @@
 package ru.otus;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 class Ioc {
 
@@ -36,15 +35,10 @@ class Ioc {
 
         DemoInvocationHandler(T myClass) {
             this.myClass = myClass;
-            needLogging = new HashSet<>();
-            for (Method method : myClass.getClass().getMethods()) {
-                for (Annotation annotation : method.getAnnotations()) {
-                    if (annotation instanceof Log) {
-                        needLogging.add(new MethodMeta(method.getName(), Arrays.asList(method.getParameterTypes())));
-                        break;
-                    }
-                }
-            }
+            needLogging = Arrays.stream(myClass.getClass().getMethods())
+                    .filter(method -> method.isAnnotationPresent(Log.class))
+                    .map(method -> new MethodMeta(method.getName(), Arrays.asList(method.getParameterTypes())))
+                    .collect(Collectors.toSet());
         }
 
         @Override
