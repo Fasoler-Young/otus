@@ -2,25 +2,22 @@ package ru.otus.processor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import ru.otus.model.Message;
 
 class ProcessorThrowInOddSecondTest {
 
     @Test
-    void process() throws InterruptedException {
-        Processor processorThrowInOddSecond = new ProcessorThrowInOddSecond();
-
-        if (System.currentTimeMillis() / 1000 % 2 == 0) {
-            Thread.sleep(1000);
-        }
-
+    void process() {
         Message message = new Message.Builder(123).build();
 
-        processorThrowInOddSecond.process(message);
-
-        Thread.sleep(1000);
+        DateTimeProvider oddSecond = () -> LocalDateTime.of(2020, 1, 1, 0, 0, 0);
+        Processor processorThrowInOddSecond = new ProcessorThrowInOddSecond(oddSecond);
+        DateTimeProvider notOddSecond = () -> LocalDateTime.of(2020, 1, 1, 0, 0, 1);
+        Processor processorThrowInOddSecond2 = new ProcessorThrowInOddSecond(notOddSecond);
 
         assertThrows(IllegalStateException.class, () -> processorThrowInOddSecond.process(message));
+        assertDoesNotThrow(() -> processorThrowInOddSecond2.process(message));
     }
 }
