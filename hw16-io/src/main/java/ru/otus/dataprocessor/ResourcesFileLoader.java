@@ -24,9 +24,7 @@ public class ResourcesFileLoader implements Loader {
 
     @Override
     public List<Measurement> load() {
-        try {
-
-            InputStream systemResourceAsStream = ClassLoader.getSystemResourceAsStream(fileName);
+        try(InputStream systemResourceAsStream = ClassLoader.getSystemResourceAsStream(fileName)) {
             if (systemResourceAsStream == null) {
                 throw new NoSuchFileException(fileName);
             }
