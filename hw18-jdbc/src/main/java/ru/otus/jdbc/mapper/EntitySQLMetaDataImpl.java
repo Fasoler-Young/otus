@@ -3,54 +3,76 @@ package ru.otus.jdbc.mapper;
 import java.lang.reflect.Field;
 import java.util.stream.Collectors;
 
-public class EntitySQLMetaDataImpl<T> implements EntitySQLMetaData<T> {
-    private final EntityClassMetaData<T> entityClassMetaData;
+public class EntitySQLMetaDataImpl implements EntitySQLMetaData {
+    private final EntityClassMetaData<?> entityClassMetaData;
+    private String selectAllSql = null;
+    private String selectByIdSql = null;
+    private String insertSql = null;
+    private String updateSql = null;
+    private String allFields = null;
 
-    public EntitySQLMetaDataImpl(EntityClassMetaData<T> entityClassMetaDataClient) {
+    public EntitySQLMetaDataImpl(EntityClassMetaData<?> entityClassMetaDataClient) {
         this.entityClassMetaData = entityClassMetaDataClient;
     }
 
     @Override
     public String getSelectAllSql() {
-        return "select * from %s".formatted(entityClassMetaData.getName());
+        if (selectAllSql == null) {
+            selectAllSql = "select %s from %s".formatted(getAllFieldNames(), entityClassMetaData.getName());
+        }
+        return selectAllSql;
     }
 
     @Override
     public String getSelectByIdSql() {
-        return "select * from %s where %s in (?)"
-                .formatted(
-                        entityClassMetaData.getName(),
-                        entityClassMetaData.getIdField().getName());
+        if (selectByIdSql == null) {
+            selectByIdSql = "select %s from %s where %s in (?)"
+                    .formatted(
+                            getAllFieldNames(),
+                            entityClassMetaData.getName(),
+                            entityClassMetaData.getIdField().getName());
+        }
+        return selectByIdSql;
     }
 
     @Override
     public String getInsertSql() {
-        return "insert into %s (%s) values (%s)"
-                .formatted(
-                        entityClassMetaData.getName(),
-                        entityClassMetaData.getFieldsWithoutId().stream()
-                                .map(Field::getName)
-                                .collect(Collectors.joining(", ")),
-                        entityClassMetaData.getFieldsWithoutId().stream()
-                                .map(field -> "?")
-                                .collect(Collectors.joining(", ")));
+        if (insertSql == null) {
+            insertSql = "insert into %s (%s) values (%s)"
+                    .formatted(
+                            entityClassMetaData.getName(),
+                            entityClassMetaData.getFieldsWithoutId().stream()
+                                    .map(Field::getName)
+                                    .collect(Collectors.joining(", ")),
+                            entityClassMetaData.getFieldsWithoutId().stream()
+                                    .map(field -> "?")
+                                    .collect(Collectors.joining(", ")));
+        }
+        return insertSql;
     }
 
     @Override
     public String getUpdateSql() {
-        return "insert into %s (%s) values (%s)"
-                .formatted(
-                        entityClassMetaData.getName(),
-                        entityClassMetaData.getAllFields().stream()
-                                .map(Field::getName)
-                                .collect(Collectors.joining(", ")),
-                        entityClassMetaData.getAllFields().stream()
-                                .map(field -> "?")
-                                .collect(Collectors.joining(", ")));
+        if (updateSql == null) {
+            updateSql = "insert into %s (%s) values (%s)"
+                    .formatted(
+                            entityClassMetaData.getName(),
+                            entityClassMetaData.getAllFields().stream()
+                                    .map(Field::getName)
+                                    .collect(Collectors.joining(", ")),
+                            entityClassMetaData.getAllFields().stream()
+                                    .map(field -> "?")
+                                    .collect(Collectors.joining(", ")));
+        }
+        return updateSql;
     }
 
-    @Override
-    public EntityClassMetaData<T> getEntityClassMetaData() {
-        return entityClassMetaData;
+    private String getAllFieldNames() {
+        if (allFields == null) {
+            allFields = entityClassMetaData.getAllFields().stream()
+                    .map(Field::getName)
+                    .collect(Collectors.joining(", "));
+        }
+        return allFields;
     }
 }

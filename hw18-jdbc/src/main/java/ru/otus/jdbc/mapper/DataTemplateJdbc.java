@@ -15,13 +15,14 @@ import ru.otus.core.repository.executor.DbExecutor;
 public class DataTemplateJdbc<T> implements DataTemplate<T> {
 
     private final DbExecutor dbExecutor;
-    private final EntitySQLMetaData<T> entitySQLMetaData;
+    private final EntitySQLMetaData entitySQLMetaData;
     private final EntityClassMetaData<T> entityClassMetaData;
 
-    public DataTemplateJdbc(DbExecutor dbExecutor, EntitySQLMetaData<T> entitySQLMetaData) {
+    public DataTemplateJdbc(
+            DbExecutor dbExecutor, EntitySQLMetaData entitySQLMetaData, EntityClassMetaData<T> entityClassMetaData) {
         this.dbExecutor = dbExecutor;
         this.entitySQLMetaData = entitySQLMetaData;
-        entityClassMetaData = entitySQLMetaData.getEntityClassMetaData();
+        this.entityClassMetaData = entityClassMetaData;
     }
 
     @Override
@@ -53,7 +54,7 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
                         throw new DataTemplateException(e);
                     }
                 })
-                .orElseThrow(() -> new RuntimeException("Unexpected error"));
+                .orElseThrow(() -> new DataTemplateException("Unexpected error"));
     }
 
     private T buildObject(ResultSet rs) throws SQLException {
@@ -68,39 +69,38 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
                 | InstantiationException
                 | IllegalAccessException
                 | NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new DataTemplateException(e);
         }
     }
 
     @Override
-    public long insert(Connection connection, T client) {
-        return save(connection, client, true);
+    public long insert(Connection connection, T object) {
+        return save(connection, object, true);
     }
 
     @Override
-    public void update(Connection connection, T client) {
-        save(connection, client, false);
+    public void update(Connection connection, T object) {
+        save(connection, object, false);
     }
 
-    private long save(Connection connection, T client, boolean insert) {
+    private long save(Connection connection, T object, boolean insert) {
         try {
-            return dbExecutor.executeStatement(connection, entitySQLMetaData.getInsertSql(), getValues(client, insert));
+            return dbExecutor.executeStatement(
+                    connection, entitySQLMetaData.getInsertSql(), getFieldsValuesAsList(object, insert));
         } catch (Exception e) {
             throw new DataTemplateException(e);
         }
     }
 
-    private List<Object> getValues(T client, boolean without) {
+    private List<Object> getFieldsValuesAsList(T object, boolean withoutId) {
         List<Object> values = new ArrayList<>();
-        for (Field field : client.getClass().getDeclaredFields()) {
-            if (field.isAnnotationPresent(Id.class) && without) {
-                continue;
-            }
+        List<Field> fields = withoutId ? entityClassMetaData.getFieldsWithoutId() : entityClassMetaData.getAllFields();
+        for (Field field : fields) {
             field.setAccessible(true);
             try {
-                values.add(field.get(client));
+                values.add(field.get(object));
             } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                throw new DataTemplateException(e);
             }
         }
         return values;
