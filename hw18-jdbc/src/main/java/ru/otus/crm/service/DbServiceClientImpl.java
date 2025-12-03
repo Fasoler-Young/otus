@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.otus.core.repository.DataTemplate;
 import ru.otus.core.sessionmanager.TransactionRunner;
+import ru.otus.crm.cachehw.MyCacheLong;
 import ru.otus.crm.model.Client;
 
 public class DbServiceClientImpl implements DBServiceClient {
@@ -13,15 +14,24 @@ public class DbServiceClientImpl implements DBServiceClient {
 
     private final DataTemplate<Client> dataTemplate;
     private final TransactionRunner transactionRunner;
+    private final MyCacheLong<Client> clientCache;
 
     public DbServiceClientImpl(TransactionRunner transactionRunner, DataTemplate<Client> dataTemplate) {
         this.transactionRunner = transactionRunner;
         this.dataTemplate = dataTemplate;
+        clientCache = new MyCacheLong<>();
+    }
+
+    public DbServiceClientImpl(
+            TransactionRunner transactionRunner, DataTemplate<Client> dataTemplate, MyCacheLong<Client> clientCache) {
+        this.dataTemplate = dataTemplate;
+        this.transactionRunner = transactionRunner;
+        this.clientCache = clientCache;
     }
 
     @Override
     public Client saveClient(Client client) {
-        return transactionRunner.doInTransaction(connection -> {
+        Client savedClient = transactionRunner.doInTransaction(connection -> {
             if (client.getId() == null) {
                 var clientId = dataTemplate.insert(connection, client);
                 var createdClient = new Client(clientId, client.getName());
@@ -32,23 +42,28 @@ public class DbServiceClientImpl implements DBServiceClient {
             log.info("updated client: {}", client);
             return client;
         });
+        clientCache.put(savedClient.getId(), savedClient);
+        return savedClient;
     }
 
     @Override
     public Optional<Client> getClient(long id) {
-        return transactionRunner.doInTransaction(connection -> {
-            var clientOptional = dataTemplate.findById(connection, id);
-            log.info("client: {}", clientOptional);
-            return clientOptional;
-        });
+        return Optional.ofNullable(clientCache.get(id))
+                .or(() -> transactionRunner.doInTransaction(connection -> {
+                    var clientOptional = dataTemplate.findById(connection, id);
+                    log.info("client: {}", clientOptional);
+                    return clientOptional;
+                }));
     }
 
     @Override
     public List<Client> findAll() {
-        return transactionRunner.doInTransaction(connection -> {
+        List<Client> clients = transactionRunner.doInTransaction(connection -> {
             var clientList = dataTemplate.findAll(connection);
             log.info("clientList:{}", clientList);
             return clientList;
         });
+        clients.forEach(client -> clientCache.put(client.getId(), client));
+        return clients;
     }
 }
