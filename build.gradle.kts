@@ -40,6 +40,7 @@ allprojects {
     val j2objcAnnotations: String by project
     val hibernate: String by project
     val jakarta: String by project
+    val reflections: String by project
 
     apply(plugin = "io.spring.dependency-management")
     dependencyManagement {
@@ -58,6 +59,8 @@ allprojects {
             dependency("com.google.j2objc:j2objc-annotations:$j2objcAnnotations")
             dependency("org.hibernate.orm:hibernate-core:$hibernate")
             dependency("jakarta.persistence:jakarta.persistence-api:$jakarta")
+            dependency("org.reflections:reflections:$reflections")
+
         }
     }
 
