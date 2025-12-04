@@ -28,5 +28,7 @@ pluginManagement {
 include("hw08-gc")
 include("hw10-aop")
 include("hw12-solid")
-
+include("hw15-patterns")
 include("hw16-io")
+include("hw18-jdbc")
+include("hw21-jpql")
