@@ -71,7 +71,7 @@ public class Client implements Cloneable {
         // Клонируем телефоны и устанавливаем связи
         if (this.phones != null) {
             List<Phone> clonedPhones = this.phones.stream()
-                    .map(phone ->  new Phone(phone.getId(), phone.getNumber(), clonedClient))
+                    .map(phone -> new Phone(phone.getId(), phone.getNumber(), clonedClient))
                     .collect(Collectors.toList());
             clonedClient.setPhones(clonedPhones);
         }
