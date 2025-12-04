@@ -50,11 +50,9 @@ public class Client implements Cloneable {
         this.name = name;
         this.address = address;
         if (phones != null) {
-            this.phones = phones;
-            // Устанавливаем обратные ссылки
-            for (Phone phone : this.phones) {
-                phone.setClient(this);
-            }
+            this.phones = phones.stream()
+                    .map(phone -> new Phone(phone.getId(), phone.getNumber(), this))
+                    .collect(Collectors.toList());
         }
     }
 
@@ -73,11 +71,7 @@ public class Client implements Cloneable {
         // Клонируем телефоны и устанавливаем связи
         if (this.phones != null) {
             List<Phone> clonedPhones = this.phones.stream()
-                    .map(phone -> {
-                        Phone clonedPhone = new Phone(phone.getId(), phone.getNumber());
-                        clonedPhone.setClient(clonedClient); // устанавливаем связь с клонированным клиентом
-                        return clonedPhone;
-                    })
+                    .map(phone ->  new Phone(phone.getId(), phone.getNumber(), clonedClient))
                     .collect(Collectors.toList());
             clonedClient.setPhones(clonedPhones);
         }
