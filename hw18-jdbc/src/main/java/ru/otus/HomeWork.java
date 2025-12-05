@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.otus.core.repository.executor.DbExecutorImpl;
 import ru.otus.core.sessionmanager.TransactionRunnerJdbc;
+import ru.otus.crm.cachehw.MyCacheLong;
 import ru.otus.crm.datasource.DriverManagerDataSource;
 import ru.otus.crm.model.Client;
 import ru.otus.crm.model.Manager;
@@ -31,13 +32,16 @@ public class HomeWork {
         // Работа с клиентом
         EntityClassMetaData<Client> entityClassMetaDataClient = new EntityClassMetaDataImpl<>(Client.class);
         EntitySQLMetaData entitySQLMetaDataClient = new EntitySQLMetaDataImpl(entityClassMetaDataClient);
+        MyCacheLong<Client> clientCache = new MyCacheLong<>();
+        clientCache.addListener(
+                ((key, value, action) -> log.info("key:{}, value: {}, action: {}", key, value, action)));
         var dataTemplateClient = new DataTemplateJdbc<>(
                 dbExecutor,
                 entitySQLMetaDataClient,
                 entityClassMetaDataClient); // реализация DataTemplate, универсальная
 
         // Код дальше должен остаться
-        var dbServiceClient = new DbServiceClientImpl(transactionRunner, dataTemplateClient);
+        var dbServiceClient = new DbServiceClientImpl(transactionRunner, dataTemplateClient, clientCache);
         dbServiceClient.saveClient(new Client("dbServiceFirst"));
 
         var clientSecond = dbServiceClient.saveClient(new Client("dbServiceSecond"));
@@ -50,10 +54,13 @@ public class HomeWork {
 
         EntityClassMetaData<Manager> entityClassMetaDataManager = new EntityClassMetaDataImpl<>(Manager.class);
         EntitySQLMetaData entitySQLMetaDataManager = new EntitySQLMetaDataImpl(entityClassMetaDataManager);
+        MyCacheLong<Manager> managerMyCacheLong = new MyCacheLong<>();
+        managerMyCacheLong.addListener(
+                ((key, value, action) -> log.info("key:{}, value: {}, action: {}", key, value, action)));
         var dataTemplateManager =
                 new DataTemplateJdbc<>(dbExecutor, entitySQLMetaDataManager, entityClassMetaDataManager);
 
-        var dbServiceManager = new DbServiceManagerImpl(transactionRunner, dataTemplateManager);
+        var dbServiceManager = new DbServiceManagerImpl(transactionRunner, dataTemplateManager, managerMyCacheLong);
         dbServiceManager.saveManager(new Manager("ManagerFirst"));
 
         var managerSecond = dbServiceManager.saveManager(new Manager("ManagerSecond"));
