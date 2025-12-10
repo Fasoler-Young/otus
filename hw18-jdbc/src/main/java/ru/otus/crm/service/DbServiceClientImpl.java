@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.otus.core.repository.DataTemplate;
 import ru.otus.core.sessionmanager.TransactionRunner;
-import ru.otus.crm.cachehw.MyCacheLong;
+import ru.otus.crm.cachehw.MyCacheImpl;
 import ru.otus.crm.model.Client;
 
 public class DbServiceClientImpl implements DBServiceClient {
@@ -14,16 +14,18 @@ public class DbServiceClientImpl implements DBServiceClient {
 
     private final DataTemplate<Client> dataTemplate;
     private final TransactionRunner transactionRunner;
-    private final MyCacheLong<Client> clientCache;
+    private final MyCacheImpl<Long, Client> clientCache;
 
     public DbServiceClientImpl(TransactionRunner transactionRunner, DataTemplate<Client> dataTemplate) {
         this.transactionRunner = transactionRunner;
         this.dataTemplate = dataTemplate;
-        clientCache = new MyCacheLong<>();
+        clientCache = new MyCacheImpl<>();
     }
 
     public DbServiceClientImpl(
-            TransactionRunner transactionRunner, DataTemplate<Client> dataTemplate, MyCacheLong<Client> clientCache) {
+            TransactionRunner transactionRunner,
+            DataTemplate<Client> dataTemplate,
+            MyCacheImpl<Long, Client> clientCache) {
         this.dataTemplate = dataTemplate;
         this.transactionRunner = transactionRunner;
         this.clientCache = clientCache;

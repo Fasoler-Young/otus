@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.otus.core.repository.DataTemplate;
 import ru.otus.core.sessionmanager.TransactionRunner;
-import ru.otus.crm.cachehw.MyCacheLong;
+import ru.otus.crm.cachehw.MyCacheImpl;
 import ru.otus.crm.model.Manager;
 
 public class DbServiceManagerImpl implements DBServiceManager {
@@ -14,21 +14,21 @@ public class DbServiceManagerImpl implements DBServiceManager {
 
     private final DataTemplate<Manager> managerDataTemplate;
     private final TransactionRunner transactionRunner;
-    private final MyCacheLong<Manager> managerMyCacheLong;
+    private final MyCacheImpl<Long, Manager> managerMyCacheImpl;
 
     public DbServiceManagerImpl(TransactionRunner transactionRunner, DataTemplate<Manager> managerDataTemplate) {
         this.transactionRunner = transactionRunner;
         this.managerDataTemplate = managerDataTemplate;
-        managerMyCacheLong = new MyCacheLong<>();
+        managerMyCacheImpl = new MyCacheImpl<>();
     }
 
     public DbServiceManagerImpl(
             TransactionRunner transactionRunner,
             DataTemplate<Manager> managerDataTemplate,
-            MyCacheLong<Manager> managerMyCacheLong) {
+            MyCacheImpl<Long, Manager> managerMyCacheImpl) {
         this.managerDataTemplate = managerDataTemplate;
         this.transactionRunner = transactionRunner;
-        this.managerMyCacheLong = managerMyCacheLong;
+        this.managerMyCacheImpl = managerMyCacheImpl;
     }
 
     @Override
@@ -44,13 +44,13 @@ public class DbServiceManagerImpl implements DBServiceManager {
             log.info("updated manager: {}", manager);
             return manager;
         });
-        managerMyCacheLong.put(savedMenager.getNo(), savedMenager);
+        managerMyCacheImpl.put(savedMenager.getNo(), savedMenager);
         return savedMenager;
     }
 
     @Override
     public Optional<Manager> getManager(long no) {
-        return Optional.ofNullable(managerMyCacheLong.get(no))
+        return Optional.ofNullable(managerMyCacheImpl.get(no))
                 .or(() -> transactionRunner.doInTransaction(connection -> {
                     var clientOptional = managerDataTemplate.findById(connection, no);
                     log.info("client: {}", clientOptional);
@@ -65,7 +65,7 @@ public class DbServiceManagerImpl implements DBServiceManager {
             log.info("managerList:{}", managerList);
             return managerList;
         });
-        managers.forEach(manager -> managerMyCacheLong.put(manager.getNo(), manager));
+        managers.forEach(manager -> managerMyCacheImpl.put(manager.getNo(), manager));
         return managers;
     }
 }

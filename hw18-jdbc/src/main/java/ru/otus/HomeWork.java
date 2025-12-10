@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.otus.core.repository.executor.DbExecutorImpl;
 import ru.otus.core.sessionmanager.TransactionRunnerJdbc;
-import ru.otus.crm.cachehw.MyCacheLong;
+import ru.otus.crm.cachehw.MyCacheImpl;
 import ru.otus.crm.datasource.DriverManagerDataSource;
 import ru.otus.crm.model.Client;
 import ru.otus.crm.model.Manager;
@@ -32,7 +32,7 @@ public class HomeWork {
         // Работа с клиентом
         EntityClassMetaData<Client> entityClassMetaDataClient = new EntityClassMetaDataImpl<>(Client.class);
         EntitySQLMetaData entitySQLMetaDataClient = new EntitySQLMetaDataImpl(entityClassMetaDataClient);
-        MyCacheLong<Client> clientCache = new MyCacheLong<>();
+        MyCacheImpl<Long, Client> clientCache = new MyCacheImpl<>();
         clientCache.addListener(
                 ((key, value, action) -> log.info("key:{}, value: {}, action: {}", key, value, action)));
         var dataTemplateClient = new DataTemplateJdbc<>(
@@ -54,13 +54,13 @@ public class HomeWork {
 
         EntityClassMetaData<Manager> entityClassMetaDataManager = new EntityClassMetaDataImpl<>(Manager.class);
         EntitySQLMetaData entitySQLMetaDataManager = new EntitySQLMetaDataImpl(entityClassMetaDataManager);
-        MyCacheLong<Manager> managerMyCacheLong = new MyCacheLong<>();
-        managerMyCacheLong.addListener(
+        MyCacheImpl<Long, Manager> managerMyCacheImpl = new MyCacheImpl<>();
+        managerMyCacheImpl.addListener(
                 ((key, value, action) -> log.info("key:{}, value: {}, action: {}", key, value, action)));
         var dataTemplateManager =
                 new DataTemplateJdbc<>(dbExecutor, entitySQLMetaDataManager, entityClassMetaDataManager);
 
-        var dbServiceManager = new DbServiceManagerImpl(transactionRunner, dataTemplateManager, managerMyCacheLong);
+        var dbServiceManager = new DbServiceManagerImpl(transactionRunner, dataTemplateManager, managerMyCacheImpl);
         dbServiceManager.saveManager(new Manager("ManagerFirst"));
 
         var managerSecond = dbServiceManager.saveManager(new Manager("ManagerSecond"));
