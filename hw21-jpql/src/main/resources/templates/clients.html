@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Пользователи</title>
+    <script>
+        function getClientById() {
+            const clientIdTextBox = document.getElementById('clientIdTextBox');
+            const clientDataContainer = document.getElementById('clientDataContainer');
+            const id = clientIdTextBox.value;
+
+            // Проверяем, что ID не пустой
+            if (!id.trim()) {
+                clientDataContainer.innerHTML = "Введите ID клиента";
+                return;
+            }
+
+            fetch('api/client/' + id)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Клиент не найден');
+                    }
+                    return response.json();
+                })
+                .then(user => {
+                    // Обновляем таблицу с клиентом
+                    updateClientTable(user);
+
+                    // Обновляем заголовок
+                    updateHeader(id);
+                })
+                .catch(error => {
+                    clientDataContainer.innerHTML = "Ошибка: " + error.message;
+
+                    // Очищаем таблицу при ошибке
+                    clearClientTable();
+                    updateHeader(null);
+                });
+        }
+
+        function clearClientTable() {
+            const cells = document.querySelectorAll('#clientTable tbody tr td');
+            cells.forEach(cell => {
+                cell.textContent = '';
+            });
+        }
+
+        function updateHeader(clientId) {
+            const header = document.getElementById('tableHeader');
+            if (clientId) {
+                header.textContent = `Клиент с ID: ` + clientId;
+            } else {
+                header.textContent = 'Случайный клиент';
+            }
+        }
+
+        // Функция для получения случайного клиента (если нужно)
+        function getRandomClient() {
+            const clientDataContainer = document.getElementById('clientDataContainer');
+
+            fetch('api/client/rand')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Клиент не найден');
+                    }
+                    return response.json();
+                })
+                .then(user => {
+
+                    // Обновляем таблицу с клиентом
+                    updateClientTable(user);
+
+                    // Обновляем заголовок
+                    updateHeader(null);
+                })
+                .catch(error => {
+                    clientDataContainer.innerHTML = "Ошибка: " + error.message;
+
+                    // Очищаем таблицу при ошибке
+                    clearClientTable();
+                    updateHeader(null);
+                });
+        }
+
+        function updateClientTable(client) {
+            const row = document.querySelector('#clientFullTable tbody tr');
+            const cells = row.querySelectorAll('td');
+
+            // Основная информация
+            cells[0].textContent = client.id || 'Н/Д';
+            cells[1].textContent = client.name || 'Н/Д';
+
+            // Адрес
+            cells[2].textContent = client.address ? (client.address.id || 'Н/Д') : 'Нет';
+            cells[3].textContent = client.address ? (client.address.street || 'Не указан') : 'Нет адреса';
+
+            // Телефоны
+            let phonesText = 'Нет телефонов';
+            if (client.phones && client.phones.length > 0) {
+                phonesText = client.phones.map(phone => phone.number || 'Без номера')
+                    .join(', \n');
+            }
+            cells[4].textContent = phonesText;
+        }
+
+        function clearClientFullTable() {
+            const cells = document.querySelectorAll('#clientFullTable tbody tr td');
+            cells.forEach(cell => {
+                cell.textContent = '';
+            });
+        }
+    </script>
+</head>
+
+<body>
+<h4>Получить пользователя по id</h4>
+<label for="clientIdTextBox"></label>
+<input type="text" id="clientIdTextBox" value="3" placeholder="Введите id клиента">
+<button onclick="getClientById()">Получить</button>
+<pre id="clientDataContainer"></pre>
+
+<!-- Измененный заголовок с id для динамического обновления -->
+<h4 id="tableHeader">Случайный клиент</h4>
+
+<!-- Добавляем id таблице для удобного доступа -->
+<table id="clientFullTable" style="width: 800px">
+    <thead>
+    <tr>
+        <th>ID клиента</th>
+        <th>Имя</th>
+        <th>Адрес (ID)</th>
+        <th>Улица</th>
+        <th>Телефоны</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="white-space: pre-line"></td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- Опционально: можно добавить кнопку для получения случайного клиента -->
+ <button onclick="getRandomClient()" style="margin-top: 20px;">Получить случайного клиента</button>
+
+<script>
+    // При загрузке страницы можно сразу получить клиента с id=3
+    document.addEventListener('DOMContentLoaded', function() {
+        // Автоматически загружаем клиента с ID=3 при загрузке страницы
+        updateHeader('3'); // Показываем что это клиент с ID=3
+        getClientById();
+    });
+</script>
+</body>
+</html>
