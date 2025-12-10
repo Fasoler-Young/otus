@@ -40,6 +40,7 @@ allprojects {
     val j2objcAnnotations: String by project
     val hibernate: String by project
     val jakarta: String by project
+    val reflections: String by project
 
     val jetty: String by project
     val freemarker: String by project
@@ -61,6 +62,8 @@ allprojects {
             dependency("com.google.j2objc:j2objc-annotations:$j2objcAnnotations")
             dependency("org.hibernate.orm:hibernate-core:$hibernate")
             dependency("jakarta.persistence:jakarta.persistence-api:$jakarta")
+            dependency("org.reflections:reflections:$reflections")
+
 
             dependency("org.eclipse.jetty.ee10:jetty-ee10-servlet:$jetty")
             dependency("org.eclipse.jetty:jetty-server:$jetty")
