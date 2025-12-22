@@ -22,7 +22,7 @@ public class SequenceClientServiceImpl implements SequenceClientService {
         System.out.println("\n\nЯ все!");
     }
 
-    public int getCurValueAndClear() {
+    public synchronized int getCurValueAndClear() {
         int curValue = this.curValue;
         this.curValue = 0;
         return curValue;
